@@ -1,0 +1,16 @@
+name: Feature request
+description: An idea, a missing option, or a consumable Chuckwagon doesn't know about yet.
+title: "[Feature] "
+labels: ["feature-request"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+      description: For a missing item, give its name (and a link to it if you have one).
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why? What problem does it solve for you?

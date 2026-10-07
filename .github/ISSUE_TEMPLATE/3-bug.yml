@@ -1,0 +1,40 @@
+name: Bug
+description: Something broke or didn't happen, with no Lua error (macros missing or doubled, settings not saved, options panel, commands).
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Log in with a Healing Potion in your bags
+        2. Use it in combat
+        3. ...
+  - type: input
+    id: version
+    attributes:
+      label: Chuckwagon version
+    validations:
+      required: true
+  - type: input
+    id: character
+    attributes:
+      label: Class / level
+  - type: textarea
+    id: addons
+    attributes:
+      label: Other action bar or macro addons
+      description: E.g. Bartender4, Dominos, a macro manager. "None" is a fine answer. If the bug goes away with them disabled, say so.

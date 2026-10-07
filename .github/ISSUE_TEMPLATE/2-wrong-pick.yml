@@ -1,0 +1,70 @@
+name: Wrong macro pick
+description: A CW macro used the wrong item, didn't update, or shows "?" when you have something usable.
+title: "[Pick] "
+labels: ["wrong-pick"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The output of `/chuck status` is the most useful thing you can paste. Type it in chat while the problem is happening, then copy everything it prints (a chat copy addon helps).
+  - type: dropdown
+    id: macro
+    attributes:
+      label: Which macro?
+      options:
+        - CW Heal
+        - CW Mana Pot
+        - CW Food
+        - CW Water
+        - CW Buff Food
+        - CW Stone (weapon enchants)
+        - CW Bandage
+        - Several
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What went wrong?
+      options:
+        - It used a worse item than one I have
+        - It used an item I can't use (level, class or skill)
+        - It shows "?" but I have something usable
+        - It didn't update after my bags changed
+        - The weapon enchant went on the wrong hand, or didn't apply
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: status
+    attributes:
+      label: /chuck status output
+      description: Paste everything Chuckwagon printed for `/chuck status`.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should it have used, and why?
+      description: E.g. "I have Heavy Linen Bandages and First Aid 80, but it used Linen Bandage".
+    validations:
+      required: true
+  - type: input
+    id: character
+    attributes:
+      label: Class / level
+      placeholder: Mage / 40
+    validations:
+      required: true
+  - type: textarea
+    id: settings
+    attributes:
+      label: Changed settings
+      description: Anything you changed in `/chuck options` (heal order, buff stats, weapon enchants, ...). "Defaults" is a fine answer.
+  - type: input
+    id: version
+    attributes:
+      label: Chuckwagon version
+    validations:
+      required: true
