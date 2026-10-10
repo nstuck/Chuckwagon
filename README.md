@@ -9,11 +9,7 @@ the macros rewrite themselves. Put them on your bars once and never edit them ag
 [What's new](CHANGELOG.md) · [Report a problem](#report-a-problem)
 
 **About this repository:** the [`Chuckwagon/`](Chuckwagon/) folder holds the source of the latest
-release, the same files the CurseForge download installs, and each release is tagged. It's
-open source under the [MIT license](LICENSE), but not open contribution: it's written and
-maintained by one developer, so pull requests aren't accepted. Bug reports and ideas are very
-welcome as [issues](../../issues/new/choose), and under the MIT license you're free to fork it and
-change it for yourself.
+release, the same files the CurseForge download installs, and each release is tagged.
 
 **Contents:** [Report a problem](#report-a-problem) · [Features](#features) ·
 [Options](#options) · [Commands](#commands) · [Known limitations](#known-limitations) ·
