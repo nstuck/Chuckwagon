@@ -5,7 +5,7 @@ a set of macros pointed at the best item in your bags: the strongest potion you 
 food before vendor food, the right stone for each weapon. As you level, loot and use things up,
 the macros rewrite themselves. Put them on your bars once and never edit them again.
 
-[Download on CurseForge](https://www.curseforge.com/projects/1732385) ·
+[Download on CurseForge](https://www.curseforge.com/wow/addons/chuckwagon) ·
 [What's new](CHANGELOG.md) · [Report a problem](#report-a-problem)
 
 **About this repository:** the [`Chuckwagon/`](Chuckwagon/) folder holds the source of the latest
@@ -126,6 +126,8 @@ situation yet. If one misbehaves for you, a report with `/chuck status` helps a 
   confirmed in every case (self, friendly mouseover, friendly target).
 - **Settings commands** (`/chuck heal`, `buff`, `weapon` and so on): the options panel, which
   changes the same settings, is checked; the commands themselves aren't yet.
+- **New consumables from the latest Forever build** (level 1 versions of common potions, food,
+  stones and oils) are recognised but not yet checked in game.
 - **Very first login** on an account with no macros at all: in rare cases you might see two of a
   CW macro. Delete the extra one; it won't come back.
 

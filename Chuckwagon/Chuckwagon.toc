@@ -1,0 +1,28 @@
+## Interface: 16001
+## Title: Chuckwagon
+## Notes: Keeps consumable macros (potions, healthstones, food, water, buff food, weapon stones, bandages) pointed at the best item in your bags.
+## Author: salmaldonado
+## Version: v0.1.1
+## SavedVariables: ChuckwagonDB
+## X-License: MIT
+## Category: Action Bars
+## AddonCompartmentFunc: Chuckwagon_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: Chuckwagon_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: Chuckwagon_OnAddonCompartmentLeave
+# Our own icon: 64x64 uncompressed 32-bit TGA, bottom-left origin (the client
+# honours the TGA origin flag). No extension, the way BugSack names its icon.
+## IconTexture: Interface\AddOns\Chuckwagon\Media\icon
+# CurseForge project (authors.curseforge.com project 1732385); the packager
+# uploads there on a tag push.
+## X-Curse-Project-ID: 1732385
+
+Locales/enUS.lua
+Core.lua
+Data/Items.lua
+Inventory.lua
+Selector.lua
+MacroBody.lua
+MacroWriter.lua
+Status.lua
+Commands.lua
+Options.lua
