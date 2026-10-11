@@ -30,6 +30,18 @@ L["MACROS_FULL"] =
 -- Status.lua: /chuck status and /chuck rebuild.
 L["HELP_STATUS"] = "/chuck status - what's in your bags and what each macro uses, and why"
 L["HELP_REBUILD"] = "/chuck rebuild - rescan bags and rewrite the macros now"
+L["HELP_STONE"] = "/chuck stone - your weapon enchants, and why CW Stone did nothing"
+
+-- /chuck stone, which CW Stone runs when every weapon already has its enchant.
+L["STONE_HAND_LEFT"] = "%s %d min left" -- hand name, minutes
+L["STONE_ALL_DONE"] = "CW Stone used nothing: every weapon already has its enchant (%s). "
+    .. "It's ready again %s." -- list of STONE_HAND_LEFT, STONE_WHEN_*
+L["STONE_WHEN_REFRESH"] = "when one is down to %d min" -- weaponRefresh minutes
+L["STONE_WHEN_GONE"] = "when one wears off"
+L["STONE_NEEDS"] = "CW Stone: your %s needs its enchant again. The macro has been updated: click it again." -- hand(s)
+L["STONE_NEEDS_COMBAT"] = "CW Stone: your %s needs its enchant again, but macros can't change in combat. "
+    .. "It updates when combat ends." -- hand(s)
+L["STONE_NO_WEAPON"] = "CW Stone: no weapon equipped."
 L["REBUILT"] = "Rescanned. Macros are up to date (or will update when combat ends)."
 L["STATUS_HEADER"] = "status (%s):" -- addon version
 L["STATUS_NO_SCAN"] = "  No bag scan yet. Try /chuck rebuild."
@@ -55,23 +67,29 @@ L["STATUS_OFF_HAND"] = "off hand"
 L["STATUS_ENCHANTED"] = ", already enchanted"
 L["STATUS_NO_WEAPON"] = "no weapon equipped"
 L["STATUS_FOR_HAND"] = "applies to %s"
+L["STATUS_ALL_ENCHANTED"] = "every weapon already enchanted, so a click does nothing until one wears off"
 L["STATUS_WAIT_COMBAT"] = "  In combat: macros update when combat ends."
 L["STATUS_WAIT_LOADING"] = "  Waiting for the game to load your macros."
 
 -- Commands.lua: settings slash commands (Options.lua writes the same settings).
-L["HELP_HEAL"] = "/chuck heal [healthstone potion herb|default] - heal macro source order"
 L["HELP_MANA"] = "/chuck mana [gem potion|default] - mana macro source order"
 L["HELP_BUFF"] = "/chuck buff [stats...|default] - this character's buff food stats, best first"
 L["HELP_WEAPON"] = "/chuck weapon mh|oh [kinds...|default] - this character's weapon enchants per hand"
 L["HELP_CONJURED"] = "/chuck conjured on|off - eat and drink conjured items first"
 L["HELP_BUFFANY"] = "/chuck buffany on|off - any Well Fed food when none of your stats is in bags"
+L["HELP_REFRESH"] = "/chuck refresh <minutes> - re-apply a weapon enchant with this little left (0 = when it wears off)"
+L["OPT_REFRESH"] = "Weapon enchant refresh"
+L["OPTIONS_REFRESH_DESC"] = "CW Stone applies a stone, oil or poison again once the one on your weapon "
+    .. "is down to this much time. The game asks you to confirm replacing it."
+L["CHOICE_REFRESH_OFF"] = "Only when it wears off"
+L["CHOICE_REFRESH_MIN"] = "%d min left" -- minutes
+L["SET_REFRESH_BAD"] = "  Give whole minutes from 0 to 30, e.g. /chuck refresh 2."
 L["HELP_BANDAGE"] = "/chuck bandage self|friendly - bandage yourself, or a friendly mouseover/target first"
 L["SET_SHOW"] = "  %s: %s%s" -- label, value, default marker
 L["SET_DEFAULT"] = " (default)"
 L["SET_CHOICES"] = "  Choices: %s. \"default\" resets."
 L["SET_BAD"] = "Unknown choice \"%s\" for %s. Choices: %s"
 L["SET_WEAPON_USAGE"] = "  Usage: /chuck weapon mh|oh <kinds...>|default"
-L["OPT_HEAL"] = "Heal order"
 L["OPT_MANA"] = "Mana order"
 L["OPT_BUFF"] = "Buff food stats"
 L["OPT_WEAPON_MH"] = "Main hand enchants"
@@ -96,7 +114,6 @@ L["ORDINAL_1"] = "1st"
 L["ORDINAL_2"] = "2nd"
 L["ORDINAL_3"] = "3rd"
 L["ORDINAL_4"] = "4th"
-L["OPTIONS_HEAL_DESC"] = "What the heal macro uses, in order: the first one in your bags wins. "
     .. "Picking one that's already listed swaps them. (none) ends the list."
 L["OPTIONS_MANA_DESC"] = "What the mana macro uses, in order: the first one in your bags wins. "
     .. "Picking one that's already listed swaps them. (none) ends the list."
@@ -114,9 +131,7 @@ L["OPTIONS_DEBUG_DESC"] = "Print what the addon scans and writes to chat. For bu
 L["CHOICE_NONE"] = "(none)"
 L["CHOICE_BANDAGE_SELF"] = "Yourself"
 L["CHOICE_BANDAGE_FRIENDLY"] = "Friendly mouseover or target, else yourself"
-L["CHOICE_healthstone"] = "Healthstone"
 L["CHOICE_potion"] = "Potion"
-L["CHOICE_herb"] = "Herb (Whipper Root and similar)"
 L["CHOICE_gem"] = "Mana gem"
 L["CHOICE_agi"] = "Agility"
 L["CHOICE_ap"] = "Attack power"

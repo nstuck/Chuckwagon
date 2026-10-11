@@ -2,7 +2,7 @@
 ## Title: Chuckwagon
 ## Notes: Keeps consumable macros (potions, healthstones, food, water, buff food, weapon stones, bandages) pointed at the best item in your bags.
 ## Author: salmaldonado
-## Version: v0.1.1
+## Version: v0.2.0
 ## SavedVariables: ChuckwagonDB
 ## X-License: MIT
 ## Category: Action Bars

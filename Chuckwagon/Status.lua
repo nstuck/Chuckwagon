@@ -23,7 +23,7 @@ end
 
 -- What the chosen item gives, e.g. "120 health", "3 int", "+8".
 local function Amount(key, item, source)
-    if key == "heal" or key == "food" or key == "bandage" then
+    if key == "heal" or key == "healthstone" or key == "food" or key == "bandage" then
         if item.hpPct then
             return L["STATUS_PCT_HEALTH"]:format(item.hpPct)
         end
@@ -52,8 +52,10 @@ end
 -- The rule that produced (or failed to produce) a macro's choice.
 local function Why(info, key, choice)
     local opts, snap = info.opts, info.snap
-    if key == "heal" or key == "mana" then
-        local order = Order(key == "heal" and opts.healOrder or opts.manaOrder)
+    if key == "heal" or key == "healthstone" or key == "mana" then
+        local Selector = ns.Selector
+        local order = Order((key == "heal" and Selector.HEAL_ORDER)
+            or (key == "healthstone" and Selector.HEALTHSTONE_ORDER) or opts.manaOrder)
         if choice then
             return L["STATUS_WHY_SOURCE"]:format(choice.source, order)
         end
@@ -89,8 +91,10 @@ local function Why(info, key, choice)
             return L["STATUS_NO_WEAPON"]
         end
         local why = table.concat(parts, "; ")
-        if choice then
+        if choice and choice.slot then
             why = L["STATUS_FOR_HAND"]:format(HandName(choice.slot)) .. "; " .. why
+        elseif choice then
+            why = L["STATUS_ALL_ENCHANTED"] .. "; " .. why
         end
         return why
     end
@@ -140,6 +144,39 @@ function Status.Lines(info)
         lines[#lines + 1] = L["STATUS_WAIT_LOADING"]
     end
     return lines
+end
+
+-- One chat line on the weapon enchants, for /chuck stone (which the weapon
+-- macro runs when every hand already has its enchant). `hands` maps 16/17 to
+-- an Inventory weapon (with `enchants`) or nil; `inCombat` explains a hand
+-- that lost its enchant mid-fight, since the macro can't change until then.
+-- Second return: true when a hand is due, so the macro is behind the weapons.
+-- `refresh` is the weaponRefresh setting in minutes: at or under it a hand is
+-- due again.
+function Status.StoneLine(hands, inCombat, refresh)
+    local refreshMs = (refresh or 0) * 60000
+    local done, missing = {}, {}
+    for _, slot in ipairs({ MAIN_HAND, OFF_HAND }) do
+        local weapon = hands[slot]
+        if weapon then
+            local e = weapon.enchants or {}
+            local left = math.max(e.temporaryLeft or 0, e.imbueLeft or 0)
+            if (e.temporary or e.imbue) and left > refreshMs then
+                done[#done + 1] = L["STONE_HAND_LEFT"]:format(HandName(slot), math.ceil(left / 60000))
+            else
+                missing[#missing + 1] = HandName(slot)
+            end
+        end
+    end
+    if #done == 0 and #missing == 0 then
+        return L["STONE_NO_WEAPON"]
+    end
+    if #missing > 0 then
+        local hand = table.concat(missing, ", ")
+        return (inCombat and L["STONE_NEEDS_COMBAT"] or L["STONE_NEEDS"]):format(hand), true
+    end
+    local when = refreshMs > 0 and L["STONE_WHEN_REFRESH"]:format(refresh) or L["STONE_WHEN_GONE"]
+    return L["STONE_ALL_DONE"]:format(table.concat(done, ", "), when)
 end
 
 ----------------------------------------------------------------------------
@@ -225,5 +262,19 @@ ns.slashCommands["rebuild"] = function()
     ns:Print(L["REBUILT"])
 end
 
+-- The weapon macro runs this when it has nothing to apply. If a hand turns
+-- out to be due (the macro is behind), rescan so the macro catches up now;
+-- in combat the rewrite waits for combat to end.
+ns.slashCommands["stone"] = function()
+    local read = ns.Inventory.ReadWeapon
+    local line, behind = Status.StoneLine({ [MAIN_HAND] = read(MAIN_HAND), [OFF_HAND] = read(OFF_HAND) },
+        InCombatLockdown(), ns.DB().settings.weaponRefresh)
+    ns:Print(line)
+    if behind then
+        ns.Inventory.Scan()
+    end
+end
+
+table.insert(ns.helpLines, 1, "HELP_STONE")
 table.insert(ns.helpLines, 1, "HELP_REBUILD")
 table.insert(ns.helpLines, 1, "HELP_STATUS")

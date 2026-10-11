@@ -1,4 +1,4 @@
--- MacroWriter.lua: writes our seven macros (MacroBody) whenever the Inventory
+-- MacroWriter.lua: writes our eight macros (MacroBody) whenever the Inventory
 -- snapshot changes. Macros are found by name, never by index, created in the
 -- account-wide pool (shared by all characters), rewritten only when the body
 -- or icon changed, and never touched in combat (queued until
@@ -39,10 +39,10 @@ function MacroWriter.UserOptions()
     local settings = ns.DB().settings
     local char = ns.GetCharSettings() or {}
     return {
-        healOrder = settings.healOrder,
         manaOrder = settings.manaOrder,
         conjuredFirst = settings.conjuredFirst,
         buffFallback = settings.buffFallback,
+        weaponRefresh = settings.weaponRefresh,
         buffOrder = char.buffOrder,
         weaponOrder = char.weaponOrder,
     }
@@ -116,6 +116,24 @@ local function WriteOne(m)
     return true
 end
 
+-- A weapon enchant crossing the refresh time fires no event, so rescan just
+-- after it does; the scan's listener rewrites the weapon macro (or queues it
+-- in combat). C_Timer.After can't be cancelled: a generation counter drops
+-- timers that a newer refresh replaced.
+local refreshGeneration = 0
+local function ScheduleWeaponRefresh(waitMs)
+    refreshGeneration = refreshGeneration + 1
+    if not waitMs then
+        return
+    end
+    local mine = refreshGeneration
+    C_Timer.After(waitMs / 1000 + 1, function()
+        if mine == refreshGeneration then
+            ns.Inventory.Request()
+        end
+    end)
+end
+
 -- Picks every macro's item from the latest Inventory snapshot and writes the
 -- macros that changed. Safe to call any time: it defers itself in combat and
 -- before the first scan.
@@ -154,13 +172,21 @@ function MacroWriter.Refresh()
     for _, m in ipairs(ns.MacroBody.Build(choices, { bandageTarget = settings.bandageTarget })) do
         WriteOne(m)
     end
+    -- Times left are as of the scan, which may be older than this refresh.
+    local wait = Selector.NextRefresh(choices.weapon, opts)
+    if wait and snap.time and GetTime then
+        wait = math.max(0, wait - (GetTime() - snap.time) * 1000)
+    end
+    ScheduleWeaponRefresh(wait)
 end
 
 ns.Inventory.OnChanged(MacroWriter.Refresh)
 
+-- After combat, scan again rather than reuse the snapshot from before the
+-- fight: enchant times left have moved on (the scan's listener refreshes).
 ns:RegisterEvent("PLAYER_REGEN_ENABLED", function()
     if pendingCombat then
-        MacroWriter.Refresh()
+        ns.Inventory.Scan()
     end
 end)
 
@@ -172,7 +198,12 @@ ns:RegisterEvent("UPDATE_MACROS", function()
     end
 end)
 
-for _, key in ipairs({ "healOrder", "manaOrder", "conjuredFirst", "buffFallback", "bandageTarget",
-    "buffOrder", "weaponOrder" }) do
-    ns.OnSettingChanged(key, MacroWriter.Refresh)
+-- A setting change rescans rather than reuse the last snapshot: weapon
+-- enchant times in it may be minutes old (the scan's listener refreshes).
+local function RescanNow()
+    ns.Inventory.Scan()
+end
+for _, key in ipairs({ "manaOrder", "conjuredFirst", "buffFallback", "bandageTarget",
+    "buffOrder", "weaponOrder", "weaponRefresh" }) do
+    ns.OnSettingChanged(key, RescanNow)
 end

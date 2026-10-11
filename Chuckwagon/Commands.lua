@@ -139,7 +139,6 @@ local function AccountList(key, label, valid)
     })
 end
 
-ns.slashCommands["heal"] = AccountList("healOrder", "OPT_HEAL", { "healthstone", "potion", "herb" })
 ns.slashCommands["mana"] = AccountList("manaOrder", "OPT_MANA", { "gem", "potion" })
 
 ns.slashCommands["buff"] = ListCommand({
@@ -211,7 +210,23 @@ ns.slashCommands["bandage"] = function(rest)
     Show(L["OPT_BANDAGE"], ns.DB().settings.bandageTarget, false)
 end
 
-for _, key in ipairs({ "HELP_HEAL", "HELP_MANA", "HELP_BUFF", "HELP_WEAPON", "HELP_CONJURED", "HELP_BUFFANY",
+-- Minutes left at which CW Stone applies a weapon enchant again.
+ns.slashCommands["refresh"] = function(rest)
+    local word = (rest or ""):match("^%s*(%S*)")
+    if word ~= "" then
+        local minutes = tonumber(word)
+        if not minutes or minutes ~= math.floor(minutes) or minutes < 0 or minutes > 30 then
+            print(L["SET_REFRESH_BAD"])
+            return
+        end
+        ns.SetSetting("weaponRefresh", minutes)
+    end
+    local minutes = ns.DB().settings.weaponRefresh
+    Show(L["OPT_REFRESH"], minutes == 0 and L["CHOICE_REFRESH_OFF"] or L["CHOICE_REFRESH_MIN"]:format(minutes),
+        minutes == 2)
+end
+
+for _, key in ipairs({ "HELP_MANA", "HELP_BUFF", "HELP_WEAPON", "HELP_REFRESH", "HELP_CONJURED", "HELP_BUFFANY",
     "HELP_BANDAGE" }) do
     table.insert(ns.helpLines, #ns.helpLines - 1, key)
 end

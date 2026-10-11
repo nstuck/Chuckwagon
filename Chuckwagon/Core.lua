@@ -20,7 +20,7 @@ local L = ns.L
 
 -- Current SavedVariables schema version. Bump this and add a migration step
 -- in MIGRATIONS whenever the shape of the saved db changes.
-local CURRENT_VERSION = 2
+local CURRENT_VERSION = 3
 
 -- Ordered migration steps, keyed by the version a save is currently *at*:
 -- MIGRATIONS[1] upgrades a version-1 db to version 2, and so on. Each step
@@ -38,6 +38,14 @@ local MIGRATIONS = {
             settings.healthstoneFirst = nil
         end
         db.version = 2
+    end,
+    -- 2 -> 3: healthstones got their own macro, so the heal macro has no
+    -- source order to choose any more; drop the saved healOrder.
+    [2] = function(db)
+        if type(db.settings) == "table" then
+            db.settings.healOrder = nil
+        end
+        db.version = 3
     end,
 }
 
@@ -107,7 +115,7 @@ local function ApplyDefaults(t, defaults)
 end
 
 -- Account-wide settings.
--- List settings (healOrder, manaOrder) are NOT listed here: ApplyDefaults
+-- List settings (manaOrder) are NOT listed here: ApplyDefaults
 -- would merge a saved list with the default index by index. They stay nil
 -- until the player sets one, and nil means "use Selector.Options' default".
 local DEFAULT_SETTINGS = {
@@ -118,6 +126,9 @@ local DEFAULT_SETTINGS = {
     buffFallback = true,
     -- Bandage macro target, "self" or "friendly" (mouseover/target first).
     bandageTarget = "self",
+    -- Minutes: a weapon enchant with this little left is applied again
+    -- (0 = only once it has worn off).
+    weaponRefresh = 2,
 }
 
 -- Per-character entry in db.chars["Name-Realm"]. Its settings are lists
@@ -279,7 +290,7 @@ ns.slashCommands["debug"] = function()
 end
 
 -- The packaged TOC carries the git tag (the packager replaces
--- v0.1.1); an unpackaged copy still has the placeholder,
+-- v0.2.0); an unpackaged copy still has the placeholder,
 -- so call that "dev" instead of printing the raw token.
 function ns.Version()
     local get = C_AddOns and C_AddOns.GetAddOnMetadata

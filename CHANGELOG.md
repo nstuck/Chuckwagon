@@ -5,6 +5,13 @@ changelog: each release uploads only its own section (tools/release-notes.sh). O
 "## vX.Y.Z" section per release, newest first; the heading starts with exactly the tag name.
 Work in progress goes under "## vX.Y.Z (unreleased)"; drop "(unreleased)" in the release commit. -->
 
+## v0.2.0
+
+- **New macro: CW Healthstone.** Healthstones now have their own button, and **CW Heal** uses health potions. Macros can't change during combat, so with one button you could only ever use one of the two in a fight; now you can use both. Healing herbs that share the healthstone's cooldown (Whipper Root Tuber and similar) go on CW Healthstone. Chuckwagon now needs eight free General macro slots.
+- The heal order setting and `/chuck heal` are gone, since each heal macro now has one job.
+- **CW Stone no longer replaces an active enchant.** Once every weapon has its stone, oil or poison, clicking it uses nothing until one is due again (see below), and says so in chat with the time left on each weapon. The same report: `/chuck stone`.
+- **CW Stone tops up a weapon enchant before it runs out**, once it's down to 2 minutes, so you don't have to wait for it to wear off. Change the time (or turn it off) in the options or with `/chuck refresh <minutes>`. The game asks you to confirm replacing the old one.
+
 ## v0.1.1
 
 - Chuckwagon is now **open source under the MIT license**. The source of each release, a full guide and the issue tracker are at [github.com/nstuck/Chuckwagon](https://github.com/nstuck/Chuckwagon).

@@ -76,6 +76,9 @@ local function ReadWeapon(slot)
     }
 end
 
+-- Live read of one hand, for /chuck stone (the snapshot can be a scan old).
+Inventory.ReadWeapon = ReadWeapon
+
 -- UnitHealthMax/UnitPowerMax are "secret" while the player is addon-restricted
 -- (SecretWhenUnitHealthMaxRestricted in UnitDocumentation.lua; arithmetic on a
 -- secret is a Lua error). Keep the last readable value.
@@ -136,6 +139,8 @@ function Inventory.Scan(levelOverride)
         maxHealth = lastMaxHealth,
         maxMana = lastMaxMana,
         firstAid = ReadFirstAid(),
+        -- GetTime() seconds at the scan: enchant times left are as of then.
+        time = GetTime and GetTime() or nil,
     }
     if ns.Debug then
         local kinds = 0

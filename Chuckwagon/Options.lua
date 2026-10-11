@@ -309,7 +309,6 @@ local function BuildPanel()
             end,
         }, #valid)
     end
-    AccountList("healOrder", "OPT_HEAL", "OPTIONS_HEAL_DESC", { "healthstone", "potion", "herb" })
     AccountList("manaOrder", "OPT_MANA", "OPTIONS_MANA_DESC", { "gem", "potion" })
     RegisterCheckbox("conjuredFirst", L["OPT_CONJURED"], L["OPTIONS_CONJURED_DESC"], true)
     RegisterCheckbox("buffFallback", L["OPT_BUFFANY"], L["OPTIONS_BUFFANY_DESC"], true)
@@ -329,6 +328,34 @@ local function BuildPanel()
         container:Add("friendly", L["CHOICE_BANDAGE_FRIENDLY"])
         return container:GetData()
     end, L["OPTIONS_BANDAGE_DESC"])
+
+    local refresh = Settings.RegisterProxySetting(category, Variable("weaponRefresh"), Settings.VarType.Number,
+        L["OPT_REFRESH"], 2,
+        function()
+            return ns.DB().settings.weaponRefresh
+        end,
+        function(value)
+            ns.SetSetting("weaponRefresh", value)
+        end)
+    Watch("weaponRefresh", Variable("weaponRefresh"))
+    Settings.CreateDropdown(category, refresh, function()
+        local container = Settings.CreateControlTextContainer()
+        container:Add(0, L["CHOICE_REFRESH_OFF"])
+        -- /chuck refresh takes any 0-30, so list a saved odd value too.
+        local minutesList, current = { 1, 2, 3, 5, 10 }, ns.DB().settings.weaponRefresh
+        local listed = current == 0
+        for _, minutes in ipairs(minutesList) do
+            listed = listed or minutes == current
+        end
+        if not listed and type(current) == "number" then
+            minutesList[#minutesList + 1] = current
+            table.sort(minutesList)
+        end
+        for _, minutes in ipairs(minutesList) do
+            container:Add(minutes, L["CHOICE_REFRESH_MIN"]:format(minutes))
+        end
+        return container:GetData()
+    end, L["OPTIONS_REFRESH_DESC"])
 
     -- 2. This character (per-character lists)
     AddHeader(L["OPTIONS_SECTION_CHAR"]:format(UnitName("player") or "?"), L["OPTIONS_SECTION_CHAR_DESC"])

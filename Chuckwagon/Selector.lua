@@ -46,13 +46,14 @@ local WEAPON_DEFAULTS = {
 
 -- Returns the full option set for a class, with defaults filled in.
 -- opts fields (all optional):
---   healOrder     sources for the heal macro: "healthstone", "potion", "herb"
 --   manaOrder     sources for the mana macro: "gem", "potion"
 --   conjuredFirst food/water/potions eat conjured items first
 --   buffOrder     Well Fed stats, best first ("str", "agi", "sta", "int", "spi",
 --                 "ap", "spd", "heal", "crit", "mp5", "hp5")
 --   buffFallback  with none of buffOrder in bags, use any Well Fed food
 --   weaponOrder   { [16] = kinds, [17] = kinds } (item `kind`s, or "stone")
+--   weaponRefresh minutes: an enchant with this little time left is due again
+--                 (0 = only once it has worn off)
 function Selector.Options(classFile, opts)
     opts = opts or {}
     local weapon = WEAPON_DEFAULTS[classFile] or WEAPON_DEFAULTS.WARRIOR
@@ -63,11 +64,11 @@ function Selector.Options(classFile, opts)
         return value
     end
     return {
-        healOrder = pick(opts.healOrder, { "healthstone", "potion", "herb" }),
         manaOrder = pick(opts.manaOrder, { "gem", "potion" }),
         conjuredFirst = pick(opts.conjuredFirst, true),
         buffOrder = pick(opts.buffOrder, BUFF_DEFAULTS[classFile] or { "sta" }),
         buffFallback = pick(opts.buffFallback, true),
+        weaponRefresh = pick(opts.weaponRefresh, 2),
         weaponOrder = {
             [MAIN_HAND] = pick(opts.weaponOrder and opts.weaponOrder[MAIN_HAND], weapon[MAIN_HAND]),
             [OFF_HAND] = pick(opts.weaponOrder and opts.weaponOrder[OFF_HAND], weapon[OFF_HAND]),
@@ -159,18 +160,31 @@ end
 -- Macros
 ----------------------------------------------------------------------------
 
+-- Healthstones' shared cooldown category (DB2 SpellCategory 1153). Herbs like
+-- Whipper Root Tuber and Tea with Sugar, and mage mana gems, are on it too,
+-- so they can never be used in the same two minutes as a healthstone.
+local HEALTHSTONE_COOLDOWN = 1153
+
+-- Two heal macros, one per cooldown: potions (and instant heals on their own
+-- cooldowns) in the heal macro, healthstones (and heals sharing their
+-- cooldown) in the healthstone macro. One button each means both can be used
+-- in the same fight; one macro can't switch between them during combat.
 local HEAL_SOURCES = {
     healthstone = function(i)
         return i.cat == "healthstone"
     end,
+    herb = function(i)
+        return i.cat == "other" and (i.hp or 0) > 0 and i.cd == HEALTHSTONE_COOLDOWN
+    end,
     potion = function(i)
         return i.cat == "potion" and (i.hp or 0) > 0
     end,
-    -- Other instant heals; on Forever these share the healthstone cooldown.
-    herb = function(i)
-        return i.cat == "other" and (i.hp or 0) > 0
+    other = function(i)
+        return i.cat == "other" and (i.hp or 0) > 0 and i.cd ~= HEALTHSTONE_COOLDOWN
     end,
 }
+Selector.HEAL_ORDER = { "potion", "other" }
+Selector.HEALTHSTONE_ORDER = { "healthstone", "herb" }
 
 local MANA_SOURCES = {
     -- Mage mana gems (conjured instant mana outside the potion cooldown).
@@ -274,21 +288,34 @@ local function ChooseForHand(snap, items, weapon, order)
     end
 end
 
--- Is the enchant this item would give already on the weapon? Imbue scrolls
--- use Forever's separate "Imbue" enchant type; everything else "Temporary".
-local function AlreadyApplied(item, weapon)
+-- The enchant slot this item fills on the weapon: whether one is on, and
+-- its time left in milliseconds (nil when unknown). Imbue scrolls use
+-- Forever's separate "Imbue" enchant type; everything else "Temporary".
+local function EnchantState(item, weapon)
     local e = weapon.enchants
     if not e then
-        return false
+        return false, nil
     end
     if item.kind and item.kind:sub(1, 6) == "imbue_" then
-        return e.imbue
+        return e.imbue, e.imbueLeft
     end
-    return e.temporary
+    return e.temporary, e.temporaryLeft
+end
+
+-- On, with more than `refreshMs` left: applying again would replace it and
+-- waste an item. Under that it counts as due, so the macro tops it up.
+local function AlreadyApplied(item, weapon, refreshMs)
+    local on, left = EnchantState(item, weapon)
+    if not on then
+        return false
+    end
+    return left == nil or left > refreshMs
 end
 
 -- One macro, one hand per click. Target the main hand unless it already
--- has its enchant and the off hand still needs one.
+-- has its enchant and the off hand still needs one. When every hand already
+-- has its enchant there is no target (slot nil): applying again would replace
+-- an active enchant and use up an item for nothing.
 local function ChooseWeapon(snap, items, opts)
     local hands = {}
     for _, slot in ipairs({ MAIN_HAND, OFF_HAND }) do
@@ -296,7 +323,13 @@ local function ChooseWeapon(snap, items, opts)
         if weapon then
             local id = ChooseForHand(snap, items, weapon, opts.weaponOrder[slot] or {})
             if id then
-                hands[slot] = { itemID = id, applied = AlreadyApplied(items[id], weapon) }
+                local on, left = EnchantState(items[id], weapon)
+                hands[slot] = {
+                    itemID = id,
+                    applied = AlreadyApplied(items[id], weapon, (opts.weaponRefresh or 0) * 60000),
+                    on = on,
+                    left = left,
+                }
             end
         end
     end
@@ -305,27 +338,52 @@ local function ChooseWeapon(snap, items, opts)
         target = MAIN_HAND
     elseif hands[OFF_HAND] and not hands[OFF_HAND].applied then
         target = OFF_HAND
-    elseif hands[MAIN_HAND] then
-        target = MAIN_HAND
-    elseif hands[OFF_HAND] then
-        target = OFF_HAND
     end
-    if not target then
+    if target then
+        return { itemID = hands[target].itemID, slot = target, hands = hands }
+    end
+    local shown = hands[MAIN_HAND] or hands[OFF_HAND]
+    if not shown then
         return nil
     end
-    return { itemID = hands[target].itemID, slot = target, hands = hands }
+    return { itemID = shown.itemID, slot = nil, hands = hands }
+end
+
+-- Milliseconds until an applied hand's enchant falls to the refresh time, so
+-- the macro can be rewritten then (no game event fires for that); nil when
+-- no hand is waiting. `weapon` is Choose's weapon result.
+function Selector.NextRefresh(weapon, opts)
+    if not (weapon and weapon.hands) then
+        return nil
+    end
+    local refreshMs = (opts.weaponRefresh or 0) * 60000
+    local soonest
+    for _, hand in pairs(weapon.hands) do
+        if hand.applied and hand.left then
+            local wait = hand.left - refreshMs
+            if wait > 0 and (not soonest or wait < soonest) then
+                soonest = wait
+            end
+        end
+    end
+    return soonest
 end
 
 -- Picks every macro's item. Returns a table keyed by macro:
---   heal, mana, food, water, buff, bandage = { itemID =, source = } or nil
---   weapon = { itemID =, slot = 16|17, hands = { [16] = {itemID, applied}, [17] = ... } } or nil
+--   heal, healthstone, mana, food, water, buff, bandage = { itemID =, source = } or nil
+--   weapon = { itemID =, slot = 16|17, hands = { [16] = {itemID, applied}, [17] = ... } } or nil;
+--     slot is nil when every hand already has its enchant (nothing to apply)
 -- `snap` is an Inventory snapshot (counts, level, classID, classFile, weapons,
 -- maxHealth, maxMana); `items` is ns.Items; `opts` comes from Selector.Options.
 function Selector.Choose(snap, items, opts)
     local result = {}
-    local id, source = FromSources(snap, items, HEAL_SOURCES, opts.healOrder, "hp", opts.conjuredFirst)
+    local id, source = FromSources(snap, items, HEAL_SOURCES, Selector.HEAL_ORDER, "hp", opts.conjuredFirst)
     if id then
         result.heal = { itemID = id, source = source }
+    end
+    id, source = FromSources(snap, items, HEAL_SOURCES, Selector.HEALTHSTONE_ORDER, "hp", opts.conjuredFirst)
+    if id then
+        result.healthstone = { itemID = id, source = source }
     end
     id, source = FromSources(snap, items, MANA_SOURCES, opts.manaOrder, "mp", opts.conjuredFirst)
     if id then

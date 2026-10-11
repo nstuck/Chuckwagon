@@ -1,5 +1,5 @@
 -- MacroBody.lua: pure logic. Turns the Selector's choices into the name, icon
--- and body text of each of our seven macros. No WoW API calls here, so it
+-- and body text of each of our eight macros. No WoW API calls here, so it
 -- can be tested outside the game. Macro syntax:
 -- https://warcraft.wiki.gg/wiki/Making_a_macro.
 local _, ns = ...
@@ -23,6 +23,7 @@ MacroBody.MAX_BODY = 255
 -- themselves: a match is taken over.
 MacroBody.MACROS = {
     { key = "heal", name = "CW Heal", old = {} },
+    { key = "healthstone", name = "CW Healthstone", old = {} },
     { key = "mana", name = "CW Mana Pot", old = {} },
     { key = "food", name = "CW Food", old = {} },
     { key = "water", name = "CW Water", old = {} },
@@ -52,7 +53,9 @@ end
 --   heal, mana, food, water, buff: one /use of the chosen item.
 --   weapon: /use the enchant item, then /use the inventory slot (16 main
 --     hand, 17 off hand) to apply it there
---     (https://warcraft.wiki.gg/wiki/MACRO_use).
+--     (https://warcraft.wiki.gg/wiki/MACRO_use). With no slot (every hand
+--     already enchanted) the button keeps the item's icon and count, and a
+--     click only runs /chuck stone, which says why nothing was used.
 --   nothing to use: "#showtooltip" alone, which shows "?".
 --   bandage: /use with a target conditional (opts.bandageTarget).
 function MacroBody.Body(key, choice, opts)
@@ -65,6 +68,9 @@ function MacroBody.Body(key, choice, opts)
         local target = BANDAGE_TARGETS[opts and opts.bandageTarget] or BANDAGE_TARGETS.self
         lines[2] = "/use " .. target .. " " .. ref
     elseif key == "weapon" then
+        if not choice.slot then
+            return lines[1] .. "\n/chuck stone"
+        end
         lines[#lines + 1] = "/use " .. choice.slot
     end
     return table.concat(lines, "\n")
