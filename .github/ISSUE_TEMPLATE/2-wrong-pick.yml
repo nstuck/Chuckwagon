@@ -13,6 +13,7 @@ body:
       label: Which macro?
       options:
         - CW Heal
+        - CW Healthstone
         - CW Mana Pot
         - CW Food
         - CW Water
