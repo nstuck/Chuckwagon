@@ -62,8 +62,12 @@ bugs are intentional.
   as a fallback.
 - **Weapon enchants by weapon:** sharpening stones for blades, weightstones for blunt weapons,
   Elemental Sharpening Stones for anything, wizard and mana oils for casters, poisons for rogues.
-- **Dual wielding:** the weapon macro does one hand per click, main hand first, then switches to
-  the off hand. It never replaces an enchant that's still on.
+- **Dual wielding:** the weapon macro does one hand per click, whichever needs it (main hand
+  first when both do).
+- **No wasted stones, no waiting:** a weapon whose stone, oil or poison still has plenty of time
+  is skipped, and once it's down to 2 minutes (your choice) the macro tops it up.
+- **Healthstone and potion on separate buttons:** macros can't change during combat, so with a
+  button each you can use both in the same fight.
 - **Bandages:** on yourself by default, or on a friendly mouseover or target if you prefer.
 - **Forever's items** are understood, including its reworked food and Forever-only items.
 
