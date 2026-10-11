@@ -62,7 +62,7 @@ body:
     id: settings
     attributes:
       label: Changed settings
-      description: Anything you changed in `/chuck options` (heal order, buff stats, weapon enchants, ...). "Defaults" is a fine answer.
+      description: Anything you changed in `/chuck options` (mana order, buff stats, weapon enchants, enchant refresh time, ...). "Defaults" is a fine answer.
   - type: input
     id: version
     attributes:
